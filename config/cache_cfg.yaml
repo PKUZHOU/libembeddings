@@ -1,0 +1,18 @@
+gpu_cache:
+  enable: false
+  set_size: 1024
+  way_size: 2
+  block_size: 64
+
+ps_cache:
+  enable: true
+  set_size: 1024
+  way_size: 2
+  block_size: 64
+
+file_cache:
+  enable: true
+  set_size: 1024
+  way_size: 2
+  block_size: 64
+  cache_dir: "./cache_dir"
