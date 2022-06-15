@@ -16,58 +16,89 @@ Embedding::Embedding(const size_t total_entries, const size_t emb_dim, const std
     }
     bool enable_gpu_cache;
     size_t gpu_set_size;
-    size_t gpu_way_size;
-    size_t gpu_block_size;
+    size_t gpu_set_associativity;
+    size_t gpu_slab_size;
 
     bool enable_ps_cache;
     size_t ps_set_size;
-    size_t ps_way_size;
-    size_t ps_block_size;
+    size_t ps_set_associativity;
+    size_t ps_slab_size;
 
     bool enable_file_cache;
     size_t file_set_size;
-    size_t file_way_size;
-    size_t file_block_size; 
+    size_t file_set_associativity;
+    size_t file_slab_size; 
     std::string cache_dir;
 
     try{
         enable_gpu_cache = config["gpu_cache"]["enable"].as<bool>();
         gpu_set_size = config["gpu_cache"]["set_size"].as<size_t>();
-        gpu_way_size = config["gpu_cache"]["way_size"].as<size_t>();
-        gpu_block_size = config["gpu_cache"]["block_size"].as<size_t>();
+        gpu_set_associativity = config["gpu_cache"]["set_associativity"].as<size_t>();
+        gpu_slab_size = config["gpu_cache"]["slab_size"].as<size_t>();
 
         enable_ps_cache = config["ps_cache"]["enable"].as<bool>();
         ps_set_size = config["ps_cache"]["set_size"].as<size_t>();
-        ps_way_size = config["ps_cache"]["way_size"].as<size_t>();
-        ps_block_size = config["ps_cache"]["block_size"].as<size_t>();
+        ps_set_associativity = config["ps_cache"]["set_associativity"].as<size_t>();
+        ps_slab_size = config["ps_cache"]["slab_size"].as<size_t>();
 
         enable_file_cache = config["file_cache"]["enable"].as<bool>();
         file_set_size = config["file_cache"]["set_size"].as<size_t>();
-        file_way_size = config["file_cache"]["way_size"].as<size_t>();
-        file_block_size = config["file_cache"]["block_size"].as<size_t>();
-        cache_dir = config["file_cache"]["cache_dir"].as<string>();
+        file_set_associativity = config["file_cache"]["set_associativity"].as<size_t>();
+        file_slab_size = config["file_cache"]["slab_size"].as<size_t>();
 
+        cache_dir = config["file_cache"]["cache_dir"].as<string>();
 
     }catch(YAML::TypedBadConversion<std::string> &e){
         std::cerr<<"Error in parsing configs"<<std::endl;
     }
 
     //generate cache hierachy
-    gpu_cache = new GPUCache(gpu_set_size,gpu_way_size,gpu_block_size);
-    gpu_cache->set_enable(enable_gpu_cache);
+    if(enable_gpu_cache){
+        gpu_cache = new GPUCache(gpu_set_size,gpu_set_associativity,gpu_slab_size,emb_dim);
+    }
 
-    ps_cache = new PSCache(ps_set_size, ps_way_size, ps_block_size);
-    ps_cache->set_enable(enable_ps_cache);
+    if(enable_ps_cache){
+        ps_cache = new PSCache(ps_set_size, ps_set_associativity, emb_dim);
+    }
 
-    file_cache = new FileCache(file_set_size, file_way_size, file_block_size, cache_dir);
-    file_cache->set_enable(enable_file_cache);    
+    if(enable_gpu_cache){
+        if(enable_ps_cache){
+            gpu_cache->set_next_level_cache(ps_cache);
+        }
+        else if(enable_file_cache){
+            gpu_cache->set_next_level_cache(file_cache);
+        }
+    }
+    else if(enable_ps_cache){
+        if(enable_file_cache){
+            ps_cache->set_next_level_cache(file_cache);
+        }
+    }
+
+    if(enable_ps_cache && enable_file_cache){
+        ps_cache->set_next_level_cache(file_cache);
+    }
+    // file_cache = new FileCache(file_set_size, file_way_size, file_block_size, cache_dir);
+    // file_cache->set_enable(enable_file_cache);    
 
     gpu_cache->set_next_level_cache(ps_cache);
-    ps_cache->set_next_level_cache(file_cache);
+    // ps_cache->set_next_level_cache(file_cache);
 }
 
-void Embedding::read(const size_t& query_index, D_type * out_data){
+
+void Embedding::read(const SparseInput & in_keys, D_type * out_data){
     // read from the cache hierachy
+    if(gpu_cache){
+        gpu_cache->read(in_keys, out_data);
+    }
+    else if(ps_cache){
+        ps_cache->read(in_keys, out_data);
+    }
+    else if(file_cache){
+
+    }else{
+        std::cerr<<"No Cache!"<<std::endl;
+    }
 }
 
 Embedding::~Embedding(){

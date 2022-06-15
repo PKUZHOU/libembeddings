@@ -6,6 +6,7 @@
 
 using namespace std;
 
+
 void fill_input(SparseInput& input, const size_t
                                      max_idx, int n_queries){
     for(int i = 0;i<n_queries;i++){
@@ -16,14 +17,27 @@ void fill_input(SparseInput& input, const size_t
 void run_test(){
     string cache_cfg_yaml = "./config/cache_cfg.yaml";
     string mode = "sum"; 
-    EmbeddingBag embedding_bag(1024,64,mode,cache_cfg_yaml);
 
-    embedding_bag.init_weights();
+    CUDA_CHECK(cudaSetDevice(0));
+
+    // Hardcode some parameters now
+    const size_t emb_size = 10240;
+    const size_t cache_capacity_in_set = 1024;
+    const size_t embedding_vec_size = 64;
+    const size_t query_length = 16;
+    const size_t num_threads = 1;
+
+    EmbeddingBag embedding_bag(emb_size,embedding_vec_size,mode,cache_cfg_yaml);
 
     SparseInput input;
-    fill_input(input, 1024, 64);
+    fill_input(input, emb_size, query_length);
 
-    embedding_bag.forward(input);
+    D_type* output;
+    output = new D_type[embedding_vec_size];
+
+    // TODO: load the inputs to GPU 
+
+    embedding_bag.forward(input, output);
 }
 
 int main(){

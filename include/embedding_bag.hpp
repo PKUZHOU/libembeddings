@@ -14,9 +14,9 @@ private:
 public:
     EmbeddingBag(const size_t num_embeddings, const size_t embedding_dim, const std::string mode, const std::string cache_cfg_yaml);
     
-    void init_weights();
+    void load_weights();
 
-    void forward(const SparseInput & input);
+    void forward(const SparseInput & input, D_type * output);
     
     
     ~EmbeddingBag();

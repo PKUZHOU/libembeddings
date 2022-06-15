@@ -15,7 +15,8 @@ public:
 
     char* read_buffer;
 
-    FileCache(const size_t set_size, const size_t way_size, const size_t block_size, const string & file_cache_dir);
+    FileCache(const size_t set_size, const size_t set_associativity, 
+        const size_t slab_size, const size_t embedding_vec_size, const string & file_cache_dir);
 
     void read(const size_t& entry_index);
     ~FileCache();

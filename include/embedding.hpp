@@ -9,23 +9,18 @@
 
 using namespace std;
 
-struct SparseInput
-{   
-    vector<size_t> indices;   
-};
 
 class Embedding{
 private:
     size_t total_entries_;
     std::string cache_cfg_yaml_;
-    GPUCache* gpu_cache;
-    PSCache* ps_cache;
-    FileCache* file_cache;
+    GPUCache* gpu_cache = nullptr;
+    PSCache* ps_cache = nullptr;
+    FileCache* file_cache = nullptr;
 
 public:
     Embedding(const size_t total_entries, const size_t emb_dim, const std::string cache_cfg_yaml);
-    
-    void read(const size_t & query_index, D_type * out_data);
+    void read(const SparseInput& in_keys, D_type * out_data);
     
     ~Embedding();
 

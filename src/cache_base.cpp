@@ -9,3 +9,8 @@ void CacheBase::set_next_level_cache(CacheBase * next_level_cache){
         std::cerr<<"Null Next Level Cache!"<<std::endl;        
     }
 }
+
+
+CacheBase* CacheBase::get_next_level_cache(){
+    return next_level_cache_;
+}
