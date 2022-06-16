@@ -20,7 +20,7 @@ private:
 
 public:
     Embedding(const size_t total_entries, const size_t emb_dim, const std::string cache_cfg_yaml);
-    void read(const SparseInput& in_keys, D_type * out_data);
+    void Query(const SparseInput& in_keys, D_type * out_data);
     
     ~Embedding();
 

@@ -19,8 +19,8 @@ public:
 
     Cache_ * cache;
 
-    void read(const SparseInput& in_keys, D_type* out_data);
-    void write();    
+    void Query(const SparseInput& in_keys, D_type* out_data);
+    // void write();    
 };
 
 

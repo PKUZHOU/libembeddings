@@ -11,13 +11,12 @@ public:
     FILE * value_file = nullptr;
     FILE * key_file = nullptr;
 
-    size_t way_offset_bytes;
+    size_t vec_offset_bytes;
 
     char* read_buffer;
 
-    FileCache(const size_t set_size, const size_t set_associativity, 
-        const size_t slab_size, const size_t embedding_vec_size, const string & file_cache_dir);
+    FileCache(const size_t set_size, const size_t set_associativity, const size_t embedding_vec_size, const string & file_cache_dir);
 
-    void read(const size_t& entry_index);
+    void Query(const SparseInput& query_keys, D_type* out_data);
     ~FileCache();
 };

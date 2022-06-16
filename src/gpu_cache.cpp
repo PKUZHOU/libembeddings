@@ -11,7 +11,7 @@ GPUCache::GPUCache(const size_t set_size, const size_t set_associativity, const 
 }
 
 
-void GPUCache::read(const SparseInput& in_keys, D_type* out_data){
+void GPUCache::Query(const SparseInput& in_keys, D_type* out_data){
     CUDA_CHECK(cudaSetDevice(0));
     const size_t query_length = in_keys.indices.size();
     const size_t embedding_vec_size = get_emb_dim();
@@ -74,8 +74,8 @@ void GPUCache::read(const SparseInput& in_keys, D_type* out_data){
         missing_keys.indices.push_back(h_missing_keys[missing_idx]);
     }
 
-    // Read from the next level cache
-    next_level_cache->read(missing_keys, h_missing_vals);
+    // Query from the next level cache
+    next_level_cache->Query(missing_keys, h_missing_vals);
 
     // Copy the missing value to device
     CUDA_CHECK(cudaMemcpyAsync(d_missing_vals, h_missing_vals, query_length * embedding_vec_size * sizeof(float), cudaMemcpyHostToDevice, stream));
@@ -85,8 +85,18 @@ void GPUCache::read(const SparseInput& in_keys, D_type* out_data){
     cache -> Replace(d_missing_keys, h_missing_len, d_missing_vals, stream);
     // Wait for stream to complete
     CUDA_CHECK(cudaStreamSynchronize(stream));
-}
 
-void GPUCache::write(){
 
+    CUDA_CHECK(cudaFree(d_query_keys));
+    CUDA_CHECK(cudaFree(d_vals_retrieved));
+    CUDA_CHECK(cudaFree(d_missing_keys));
+    CUDA_CHECK(cudaFree(d_missing_vals));
+    CUDA_CHECK(cudaFree(d_missing_index));
+    CUDA_CHECK(cudaFree(d_missing_len));
+
+    delete h_query_keys;
+    delete h_vals_retrieved;
+    delete h_missing_keys;
+    delete h_missing_index;
+    delete h_missing_vals;
 }

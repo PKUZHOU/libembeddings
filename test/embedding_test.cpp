@@ -21,11 +21,10 @@ void run_test(){
     CUDA_CHECK(cudaSetDevice(0));
 
     // Hardcode some parameters now
-    const size_t emb_size = 10240;
-    const size_t cache_capacity_in_set = 1024;
+    const size_t emb_size = 10000000;
     const size_t embedding_vec_size = 64;
     const size_t query_length = 16;
-    const size_t num_threads = 1;
+    // const size_t num_threads = 1;
 
     EmbeddingBag embedding_bag(emb_size,embedding_vec_size,mode,cache_cfg_yaml);
 
@@ -36,8 +35,13 @@ void run_test(){
     output = new D_type[embedding_vec_size];
 
     // TODO: load the inputs to GPU 
-
     embedding_bag.forward(input, output);
+    
+    for(size_t i = 0;i<query_length;i++){
+        cout<<output[i]<<",";
+    }
+    cout<<endl;
+
 }
 
 int main(){

@@ -1,6 +1,7 @@
 #include <ps_cache.hpp>
 #include <memory.h>
-#include<type_def.hpp>
+#include <type_def.hpp>
+#include <assert.h>
 
 PSCache::PSCache(const size_t set_size, const size_t set_associativity, const size_t embedding_vec_size):CacheBase(set_size, set_associativity, embedding_vec_size){
     size_t cache_entries = get_set_size() *  get_set_associativity();   
@@ -9,17 +10,41 @@ PSCache::PSCache(const size_t set_size, const size_t set_associativity, const si
     data_ = new D_type[cache_size];
     tag_ = new size_t[cache_entries];
     valid_ = new bool[cache_entries];
+    LRU_bit_ = new bool[get_set_size()];
 
     memset(valid_, 0, sizeof(bool)*cache_entries);
-
-
+    memset(LRU_bit_, 0, sizeof(bool)*get_set_size());
     set_offset = set_associativity * embedding_vec_size;
 }
 
 
-void PSCache::read(const SparseInput& query_keys, D_type * out_data){
+void PSCache::Replace(const SparseInput& missing_keys, D_type* missing_data){
+    const size_t missing_len = missing_keys.indices.size();
+    const size_t n_ways = get_set_associativity();
+    auto emb_dim = get_emb_dim();
+    assert(n_ways == 2);
+
+    for(int idx = 0; idx < missing_len; idx ++){
+        size_t key = missing_keys.indices[idx];  
+        size_t set_index = key % get_set_size();        
+        size_t* target_tag_set = &tag_[set_index * n_ways];
+        bool& LRU_bit = LRU_bit_[set_index];
+        if(LRU_bit == 0){
+            // replace the second way
+            memcpy(data_ + set_index * set_offset + emb_dim,  missing_data + idx * emb_dim, emb_dim*sizeof(D_type));
+            tag_[set_index * n_ways + 1] = key;
+            LRU_bit = 1;
+        }else{
+            // replace the first way
+            memcpy(data_ + set_index * set_offset,  missing_data + idx * emb_dim, emb_dim*sizeof(D_type));
+            tag_[set_index * n_ways] = key;
+            LRU_bit = 0;
+        }        
+    }
+}
 
 
+void PSCache::Query(const SparseInput& query_keys, D_type * out_data){
     const int query_len = query_keys.indices.size();
     auto n_ways = get_set_associativity();
     auto emb_dim = get_emb_dim();
@@ -46,6 +71,8 @@ void PSCache::read(const SparseInput& query_keys, D_type * out_data){
                     find_entry = true;
                     memcpy(vals_retrieved + hit_len * emb_dim, data_ + set_index * set_offset + way_idx * emb_dim, emb_dim*sizeof(D_type));
                     hit_len++;
+                    //update the LRU bit, only for two-way cache
+                    LRU_bit_[set_index] = way_idx;
                 }
             }
         }
@@ -61,11 +88,19 @@ void PSCache::read(const SparseInput& query_keys, D_type * out_data){
     }
 
     //query the next level cache
-    // CacheBase* next_level_cache = get_next_level_cache();
-    // next_level_cache->read(sp_missing_keys,vals_retrieved);
+    CacheBase* next_level_cache = get_next_level_cache();
+    next_level_cache->Query(sp_missing_keys,vals_missing);
     
     //replace data
-    //TODO
+    Replace(sp_missing_keys,vals_missing);
+
+    //copy out the results
+    memcpy(out_data, vals_retrieved, sizeof(D_type) * emb_dim * hit_len);
+    memcpy(out_data + hit_len * emb_dim, vals_missing, sizeof(D_type) * emb_dim * miss_len);
+
+    delete missing_keys;
+    delete vals_retrieved;
+    delete vals_missing;
 }
 
 

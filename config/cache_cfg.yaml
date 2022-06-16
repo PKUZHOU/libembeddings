@@ -9,13 +9,9 @@ ps_cache:
   enable: true
   set_size: 1024
   set_associativity: 2
-  block_size: 64
-  slab_size: 32
 
 file_cache:
-  enable: false
-  set_size: 1024
-  set_associativity: 2
-  block_size: 64
-  slab_size: 32
-  cache_dir: "./cache_dir"
+  enable: true
+  set_size: 10000000
+  set_associativity: 1
+  cache_dir: "/datasets/tmp/file_cache"

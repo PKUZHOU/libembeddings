@@ -52,7 +52,8 @@ public:
 
     CacheBase* get_next_level_cache();
 
-    virtual void read(const SparseInput& in_queries, D_type* output) = 0;
+    virtual void Query(const SparseInput& in_queries, D_type* output) = 0;
+    
     // virtual void write() = 0;
 
     ~CacheBase() = default;

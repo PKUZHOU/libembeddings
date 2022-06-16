@@ -1,7 +1,6 @@
 #include <embedding_bag.hpp>
 
 EmbeddingBag::EmbeddingBag(const size_t num_embeddings, const size_t embedding_dim, const std::string mode, const std::string cache_cfg_yaml) : num_embeddings_(num_embeddings), embedding_dim_(embedding_dim), mode_(mode) {
-
     embedding_table = new Embedding(num_embeddings, embedding_dim, cache_cfg_yaml);
 }
 
@@ -11,8 +10,7 @@ void EmbeddingBag::forward(const SparseInput & input, D_type * output){
     if(this->mode_ == "sum"){
         // should call a GPU kernel
         D_type* tmp_entry_data = new D_type[n_queries * embedding_dim_];
-        embedding_table->read(input, tmp_entry_data);
-
+        embedding_table->Query(input, tmp_entry_data);
         //sum
         
     }
